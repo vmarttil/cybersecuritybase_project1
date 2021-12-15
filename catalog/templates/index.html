@@ -1,0 +1,27 @@
+{% extends "base_generic.html" %}
+
+{% block title %}
+  <title>Flawed Library</title>
+{% endblock %}
+
+{% block content %}
+  <h1>Flawed Library Home</h1>
+  <p>Welcome to Flawed Library, a website developed for demonstrating security 
+    flaws, based on a tutorial by the <em>Mozilla Developer Network</em>!</p>
+  <h2>Dynamic content</h2>
+  <p>The library has the following record counts:</p>
+  <ul>
+    <li><strong>Books:</strong> {{ num_books }}</li>
+    <li><strong>Copies:</strong> {{ num_instances }}</li>
+    <li><strong>Copies available:</strong> {{ num_instances_available }}</li>
+    <li><strong>Authors:</strong> {{ num_authors }}</li>
+    <li><strong>Books in genres:</strong> 
+      <ul>
+        {% for key, value in num_genres.items %}
+          <li>{{key}}: {{value}}</li>
+        {% endfor %}
+      </ul>
+    </li>
+  </ul>
+  <p>You have visited this page {{ num_visits }} time{{ num_visits|pluralize }}.</p>
+{% endblock %}
