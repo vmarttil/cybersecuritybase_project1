@@ -202,7 +202,8 @@ class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
         return BookInstance.objects.filter(borrower=self.kwargs['userid']).filter(status__exact='o').order_by('due_back')
 
 
-class AllLoanedBooksListView(LoginRequiredMixin,generic.ListView):
+class AllLoanedBooksListView(LoginRequiredMixin,PermissionRequiredMixin,generic.ListView):
+    permission_required = 'catalog.can_mark_returned'
     model = BookInstance
     template_name ='catalog/bookinstance_list_borrowed_all.html'
     paginate_by = 10
