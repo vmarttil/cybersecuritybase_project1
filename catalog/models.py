@@ -19,17 +19,10 @@ class Genre(models.Model):
 class Book(models.Model):
     """Model representing a book (but not a specific copy of a book)."""
     title = models.CharField(max_length=200)
-
-    # Foreign Key used because book can only have one author, but authors can have multiple books
-    # Author as a string rather than object because it hasn't been declared yet in the file
     author = models.ForeignKey('Author', on_delete=models.SET_NULL, null=True)
-
     summary = models.TextField(max_length=1000, help_text='Enter a brief description of the book')
     isbn = models.CharField('ISBN', max_length=13, unique=True,
-                             help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
-
-    # ManyToManyField used because genre can contain many books. Books can cover many genres.
-    # Genre class has already been defined so we can specify the object above.
+    help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text='Select a genre for this book')
 
     LANGUAGE_LIST = list(map(lambda lg : (lg.pt3, lg.name), iter_langs()))
@@ -126,6 +119,8 @@ class Review(models.Model):
     """Model representing a review of a book."""
     book = models.ForeignKey('Book', on_delete=models.CASCADE)
     text_content = models.CharField(max_length=4096)
+    # rating = models.SmallIntegerField(null=False, default=3)
+    # reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         """String for representing the Model object."""

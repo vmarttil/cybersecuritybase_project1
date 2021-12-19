@@ -1,5 +1,5 @@
-import datetime
 
+import datetime
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -8,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views import generic
-from django.db import connection, transaction
+from django.utils.html import escape
 from .models import Book, Author, BookInstance, Genre, Review
 
 from django.contrib.auth.forms import UserCreationForm
@@ -18,10 +18,8 @@ from catalog.forms import RenewBookForm, LoanBookForm, ReviewBookForm
 def register(request):  
     if request.POST == 'POST':  
         form = UserCreationForm()  
-        print("New user is being created.")
         if form.is_valid():  
             form.save()
-            print("New user should have been created.")
             messages.success(request, 'Account created successfully')  
 
     else:  
@@ -76,13 +74,14 @@ def loan_book_librarian(request, pk):
     if request.method == 'POST':
         # Create a form instance and populate it with data from the request (binding):
         form = LoanBookForm(request.POST)
-        User = get_user_model()
-        book_instance.due_back = request.POST['return_date']
-        book_instance.borrower = User.objects.filter(id=request.POST['borrower']).first()
-        book_instance.status = 'o'
-        book_instance.save()
-        # redirect to a new URL:
-        return HttpResponseRedirect(reverse('borrowed') )
+        if form.is_valid():
+            User = get_user_model()
+            book_instance.due_back = form.cleaned_data['return_date']
+            book_instance.borrower = User.objects.filter(id=form.cleaned_data['borrower']).first()
+            book_instance.status = 'o'
+            book_instance.save()
+            # redirect to a new URL:
+            return HttpResponseRedirect(reverse('borrowed') )
 
     # If this is a GET (or any other method) create the default form.
     else:
@@ -116,10 +115,11 @@ def renew_book_librarian(request, pk):
     if request.method == 'POST':
         # Create a form instance and populate it with data from the request (binding):
         form = RenewBookForm(request.POST)
-        book_instance.due_back = request.POST['renewal_date']
-        book_instance.save()
-        # redirect to a new URL:
-        return HttpResponseRedirect(reverse('borrowed') )
+        if form.is_valid():
+            book_instance.due_back = form.cleaned_data['renewal_date']
+            book_instance.save()
+            # redirect to a new URL:
+            return HttpResponseRedirect(reverse('borrowed') )
 
     # If this is a GET (or any other method) create the default form.
     else:
@@ -151,14 +151,12 @@ def review_book(request, pk):
     # If this is a POST request then process the Form data
     if request.method == 'POST':
         text_content = '<p><b>' 
-        for x in range(int(request.POST['stars'])):
-            text_content += '*'
+        text_content += render_stars(int(request.POST['stars']))
         text_content += '</b> - ' + request.POST['review_text'] + '<br/> -' + request.user.username + '</p>'
         
         review = Review(book=book, text_content=text_content)
         review.save()
 
-        # redirect to a new URL:
         return HttpResponseRedirect(reverse('book-detail', args=(pk,)) )
 
     # If this is a GET (or any other method) create the default form.
@@ -183,8 +181,6 @@ class BookDetailView(LoginRequiredMixin, generic.DetailView):
     
     def get_context_data(self, **kwargs):
         context = super(BookDetailView, self).get_context_data(**kwargs)
-        print(self.kwargs)
-        print(Review.objects.all())
         context['reviews'] = Review.objects.filter(book=Book.objects.get(id=self.kwargs['pk']))
         return context
 
@@ -210,3 +206,9 @@ class AllLoanedBooksListView(LoginRequiredMixin,PermissionRequiredMixin,generic.
 
     def get_queryset(self):
         return BookInstance.objects.filter(status__exact='o').order_by('due_back')
+
+def render_stars(rating):
+    stars = ''
+    for x in range(rating):
+        stars+='★'
+    return stars
